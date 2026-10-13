@@ -1,27 +1,39 @@
+
 import requests
 from bs4 import BeautifulSoup
-import pandas as pd
 
-url = "https://kopikenangan.com"
+url = "https://www.cnnindonesia.com/teknologi"
 
-response = requests.get(url)
+headers = {
+    "User-Agent": "Mozilla/5.0"
+}
+
+response = requests.get(
+    url,
+    headers=headers,
+    timeout=20
+)
 
 print("Status code:", response.status_code)
 
-soup = BeautifulSoup(response.text, "html.parser")
+if response.status_code == 200:
+    soup = BeautifulSoup(response.text, "html.parser")
+    print("Judul halaman:", soup.title.get_text(strip=True))
 
-print(
-    "Judul website:",
-    soup.title.text if soup.title else "Tidak ditemukan"
-)
+    links = soup.select("a[href]")
 
-data = {
-    "nama": ["Kopi Kenangan"],
-    "website": [url],
-    "judul": [soup.title.text if soup.title else "Tidak ditemukan"]
-}
+    berita = [
+        link for link in links
+        if link.get_text(" ", strip=True)
+        and "/20" in link.get("href", "")
+    ]
 
-df = pd.DataFrame(data)
-df.to_csv("kopi_kenangan.csv", index=False)
+    print("Jumlah tautan kandidat berita:", len(berita))
 
-print("Data berhasil disimpan ke kopi_kenangan.csv")
+    for link in berita[:100]:
+        print(
+            link.get_text(" ", strip=True),
+            link.get("href")
+        )
+else:
+    print("Halaman yang dapat diakses untuk scraping.")
